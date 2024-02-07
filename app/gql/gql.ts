@@ -15,8 +15,8 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
 const documents = {
     "\n  query AllProjects {\n    projects {\n      edges {\n        node {\n          id\n          name\n        }\n      }\n    }\n  }\n": types.AllProjectsDocument,
     "\n  mutation CreateService(\n    $projectId: String!\n    $name: String!\n    $source: String!\n    $variables: ServiceVariables!\n  ) {\n    serviceCreate(\n      input: {\n        projectId: $projectId\n        name: $name\n        source: { image: $source }\n        variables: $variables\n      }\n    ) {\n      id\n    }\n  }\n": types.CreateServiceDocument,
-    "\n      mutation DeleteService($id: String!) {\n        serviceDelete(id: $id)\n      }\n    ": types.DeleteServiceDocument,
-    "\n      query ServicesForProject($projectId: String!) {\n        project(id: $projectId) {\n          services {\n            edges {\n              node {\n                id\n                name\n              }\n            }\n          }\n        }\n      }\n    ": types.ServicesForProjectDocument,
+    "\n  mutation DeleteService($id: String!) {\n    serviceDelete(id: $id)\n  }\n": types.DeleteServiceDocument,
+    "\n  query ServicesForProject($projectId: String!) {\n    project(id: $projectId) {\n      services {\n        edges {\n          node {\n            id\n            name\n            createdAt\n            deployments(last: 5) {\n              edges {\n                node {\n                  environmentId\n                  createdAt\n                  suggestAddServiceDomain\n                  status\n                  environment {\n                    name\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n": types.ServicesForProjectDocument,
 };
 
 /**
@@ -44,11 +44,11 @@ export function graphql(source: "\n  mutation CreateService(\n    $projectId: St
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n      mutation DeleteService($id: String!) {\n        serviceDelete(id: $id)\n      }\n    "): (typeof documents)["\n      mutation DeleteService($id: String!) {\n        serviceDelete(id: $id)\n      }\n    "];
+export function graphql(source: "\n  mutation DeleteService($id: String!) {\n    serviceDelete(id: $id)\n  }\n"): (typeof documents)["\n  mutation DeleteService($id: String!) {\n    serviceDelete(id: $id)\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n      query ServicesForProject($projectId: String!) {\n        project(id: $projectId) {\n          services {\n            edges {\n              node {\n                id\n                name\n              }\n            }\n          }\n        }\n      }\n    "): (typeof documents)["\n      query ServicesForProject($projectId: String!) {\n        project(id: $projectId) {\n          services {\n            edges {\n              node {\n                id\n                name\n              }\n            }\n          }\n        }\n      }\n    "];
+export function graphql(source: "\n  query ServicesForProject($projectId: String!) {\n    project(id: $projectId) {\n      services {\n        edges {\n          node {\n            id\n            name\n            createdAt\n            deployments(last: 5) {\n              edges {\n                node {\n                  environmentId\n                  createdAt\n                  suggestAddServiceDomain\n                  status\n                  environment {\n                    name\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query ServicesForProject($projectId: String!) {\n    project(id: $projectId) {\n      services {\n        edges {\n          node {\n            id\n            name\n            createdAt\n            deployments(last: 5) {\n              edges {\n                node {\n                  environmentId\n                  createdAt\n                  suggestAddServiceDomain\n                  status\n                  environment {\n                    name\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};
