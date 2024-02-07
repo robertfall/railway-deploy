@@ -15,7 +15,7 @@ import {
   useSubmit,
 } from "@remix-run/react";
 import { useEffect, useRef } from "react";
-import Api from "~/api";
+import Api from "../api";
 import Exclamation from "~/components/svgs/Exclamation";
 import Spinner from "~/components/svgs/Spinner";
 import { getApiToken, getProjectIdFromCookie } from "~/cookies.server";
@@ -77,10 +77,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     servicesRequest,
   ]);
 
-  return {
+  return json({
     services,
     project: projects.find((p) => p.id === projectId),
-  };
+  });
 };
 
 export async function action({ request }: ActionFunctionArgs) {

@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { getAllProjects } from "./projects";
+import { getUser } from "./user";
 import { clientFactory } from ".";
 
-describe("Projects API", () => {
-  it("should return a list of projects", async () => {
+describe("Users API", () => {
+  it("should return a user", async () => {
     const client = clientFactory(process.env.API_TOKEN!);
-    const result = await getAllProjects(client);
+    const result = await getUser(client);
 
     expect(result).toEqual([
       {
