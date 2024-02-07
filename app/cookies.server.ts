@@ -27,6 +27,5 @@ export function getApiToken(request: Request) {
 /* Project ID */
 export const projectIdCookieFactory = createCookie("project-id");
 export function getProjectIdFromCookie(request: Request) {
-  return projectIdCookieFactory
-    .parse(request.headers.get("Cookie"))
+  return projectIdCookieFactory.parse(request.headers.get("Cookie"));
 }

@@ -338,6 +338,7 @@ export type Deployment = Node & {
   staticUrl?: Maybe<Scalars['String']['output']>;
   status: DeploymentStatus;
   suggestAddServiceDomain: Scalars['Boolean']['output'];
+  updatedAt: Scalars['DateTime']['output'];
   url?: Maybe<Scalars['String']['output']>;
 };
 
@@ -366,6 +367,7 @@ export enum DeploymentStatus {
   Removed = 'REMOVED',
   Removing = 'REMOVING',
   Skipped = 'SKIPPED',
+  Sleeping = 'SLEEPING',
   Success = 'SUCCESS',
   Waiting = 'WAITING'
 }

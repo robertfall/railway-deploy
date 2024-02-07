@@ -13,6 +13,7 @@ import {
 } from "@remix-run/react";
 import { Suspense, useCallback, useRef } from "react";
 import Api from "~/api";
+import Shield from "~/components/svgs/Shield";
 import Spinner from "~/components/svgs/Spinner";
 import {
   apiTokenCookieFactory,
@@ -33,8 +34,6 @@ export const meta: MetaFunction = () => {
 export async function loader({ request }: LoaderFunctionArgs) {
   const apiToken = await getApiToken(request);
 
-  console.log(apiToken);
-
   if (apiToken) {
     const projects = Api(apiToken.toString()).getAllProjects();
     return defer({ apiToken, projects });
@@ -49,9 +48,15 @@ export async function action({ request }: ActionFunctionArgs) {
   const { _action, apiToken, projectId } = Object.fromEntries(body);
 
   if (_action === "set-api-token") {
-    const projects = await Api(apiToken.toString()).getAllProjects();
+    if (!(await Api(apiToken.toString()).validateToken())) {
+      return json(
+        { error: "Invalid API Token" },
+        { status: 403, statusText: "Invalid API Token" }
+      );
+    }
+
     return json(
-      { apiToken, projects },
+      {},
       {
         headers: {
           "Set-Cookie": await apiTokenCookieFactory.serialize(apiToken),
@@ -63,7 +68,6 @@ export async function action({ request }: ActionFunctionArgs) {
       expires: new Date(0),
     });
 
-    console.log("API Token Cookie", apiTokenCookie);
     const projectIdCookie = await projectIdCookieFactory.serialize(null, {
       expires: new Date(0),
     });
@@ -79,12 +83,13 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 }
 
-export default function Index() {
-  const { apiToken, projects } = useLoaderData<typeof loader>();
-
-  const apiTokenFetcher = useFetcher();
+function TokenForm() {
+  const { apiToken } = useLoaderData<typeof loader>();
+  const apiTokenFetcher = useFetcher<{ error: string| undefined}>();
   const { state } = apiTokenFetcher;
   const apiTokenBusy = state === "submitting" || state === "loading";
+
+  const error = apiTokenFetcher.data?.error;
 
   const apiTokenInput = useRef<HTMLInputElement>(null);
   const clearForm = useCallback(() => {
@@ -93,6 +98,114 @@ export default function Index() {
     }
   }, [apiTokenInput]);
 
+  return (
+    <apiTokenFetcher.Form
+      className="space-y-4 md:space-y-6"
+      name="api-token-form"
+      method="POST"
+    >
+      <div>
+        <label
+          htmlFor="email"
+          className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+        >
+          Your API Token from Railway
+        </label>
+        <div className="flex space-x-1">
+          <input
+            type="password"
+            name="apiToken"
+            id="api-token"
+            disabled={!!apiToken}
+            defaultValue={apiToken}
+            ref={apiTokenInput}
+            required
+            className=" bg-gray-50 rounded-lg border border-gray-300 text-gray-900 disabled:text-gray-500 focus:ring-blue-500 focus:border-blue-500 block flex-1 text-sm p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:disabled:text-slate-400 dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          />
+          {apiToken ? (
+            <button
+              className="inline-flex space-x-2 text-white rounded-lg bg-red-500 items-center px-3 text-sm border border-s-0 border-gray-300 dark:border-gray-600"
+              type="submit"
+              name="_action"
+              value="clear-cookies"
+              onClick={() => clearForm()}
+            >
+              Clear
+            </button>
+          ) : (
+            <button
+              type="submit"
+              name="_action"
+              value="set-api-token"
+              className="inline-flex space-x-2 text-white rounded-lg bg-action-500 items-center px-3 text-sm border border-s-0 border-gray-300 dark:border-gray-600"
+            >
+              {apiTokenBusy ? (
+                <div role="status" className=" text-white fill-action-600">
+                  <Spinner />
+                  <span className="sr-only">Loading...</span>
+                </div>
+              ) : (
+                <>
+                  <Shield />
+                  <div>Verify</div>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+        {error && (
+          <div className="text-red-500 text-sm text-center italic mt-2 font-light">
+            {error}
+          </div>
+        )}
+      </div>
+    </apiTokenFetcher.Form>
+  );
+}
+
+function ProjectForm() {
+  const { apiToken, projects } = useLoaderData<typeof loader>();
+  return (
+    <form name="dashboard-form" method="POST">
+      <fieldset className="space-y-4 md:space-y-6" disabled={!apiToken}>
+        <label
+          htmlFor="projectId"
+          className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+        >
+          The project you want to display:
+        </label>
+        <select
+          id="projectId"
+          name="projectId"
+          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        >
+          <Suspense fallback={<option>Loading...</option>}>
+            <Await resolve={projects}>
+              {(ps) =>
+                ps?.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))
+              }
+            </Await>
+          </Suspense>
+        </select>
+
+        <button
+          type="submit"
+          name="_action"
+          value="set-project"
+          className="w-full text-white bg-primary-600 enabled:hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:disabled:bg-primary-300 dark:bg-primary-600 dark:enabled:hover:bg-primary-700 dark:focus:ring-primary-800"
+        >
+          Load Dashboard
+        </button>
+      </fieldset>
+    </form>
+  );
+}
+
+export default function Index() {
   return (
     <section className="bg-gray-50 dark:bg-gray-900">
       <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
@@ -108,113 +221,8 @@ export default function Index() {
               You&apos;ll need to provide some infomation to get started using
               the wallboard.
             </p>
-            <apiTokenFetcher.Form
-              className="space-y-4 md:space-y-6"
-              name="api-token-form"
-              method="POST"
-            >
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Your API Token from Railway
-                </label>
-                <div className="flex space-x-1">
-                  <input
-                    type="password"
-                    name="apiToken"
-                    id="api-token"
-                    disabled={!!apiToken}
-                    defaultValue={apiToken}
-                    ref={apiTokenInput}
-                    required
-                    className=" bg-gray-50 rounded-lg border border-gray-300 text-gray-900 disabled:text-gray-500 focus:ring-blue-500 focus:border-blue-500 block flex-1 text-sm p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:disabled:text-slate-400 dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  />
-                  {apiToken ? (
-                    <button
-                      className="inline-flex space-x-2 text-white rounded-lg bg-red-500 items-center px-3 text-sm border border-s-0 border-gray-300 dark:border-gray-600"
-                      type="submit"
-                      name="_action"
-                      value="clear-cookies"
-                      onClick={() => clearForm()}
-                    >
-                      Clear
-                    </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      name="_action"
-                      value="set-api-token"
-                      className="inline-flex space-x-2 text-white rounded-lg bg-action-500 items-center px-3 text-sm border border-s-0 border-gray-300 dark:border-gray-600"
-                    >
-                      {apiTokenBusy ? (
-                        <div
-                          role="status"
-                          className=" text-white fill-action-600"
-                        >
-                          <Spinner />
-                          <span className="sr-only">Loading...</span>
-                        </div>
-                      ) : (
-                        <>
-                          <svg
-                            className="w-[24px] h-[24px block"
-                            aria-hidden="true"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M11.6 3h.8l7 2.7c.3.2.6.6.6 1a17.7 17.7 0 0 1-7.4 14.1 1 1 0 0 1-1.2 0A17.4 17.4 0 0 1 4 6.7c0-.4.3-.8.6-1l7-2.6Zm4 7.3a1 1 0 0 0-1.3-1.6l-3.3 3-.8-1a1 1 0 0 0-1.4 1.5l1.5 1.5c.4.4 1 .4 1.4 0l4-3.4Z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          <div>Verify</div>
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </apiTokenFetcher.Form>
-            <form name="dashboard-form" method="POST">
-              <fieldset className="space-y-4 md:space-y-6" disabled={!apiToken}>
-                <label
-                  htmlFor="projectId"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  The project you want to display:
-                </label>
-                <select
-                  id="projectId"
-                  name="projectId"
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                >
-                  <Suspense fallback={<option>Loading...</option>}>
-                    <Await resolve={projects}>
-                      {(ps) =>
-                        ps?.map((project) => (
-                          <option key={project.id} value={project.id}>
-                            {project.name}
-                          </option>
-                        ))
-                      }
-                    </Await>
-                  </Suspense>
-                </select>
-
-                <button
-                  type="submit"
-                  name="_action"
-                  value="set-project"
-                  className="w-full text-white bg-primary-600 enabled:hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:disabled:bg-primary-300 dark:bg-primary-600 dark:enabled:hover:bg-primary-700 dark:focus:ring-primary-800"
-                >
-                  Load Dashboard
-                </button>
-              </fieldset>
-            </form>
+            <TokenForm />
+            <ProjectForm />
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import type {
   MetaFunction,
 } from "@remix-run/node";
 import {
+  Form,
   Link,
   json,
   redirect,
@@ -15,6 +16,7 @@ import {
 } from "@remix-run/react";
 import { useEffect, useRef } from "react";
 import Api from "~/api";
+import Exclamation from "~/components/svgs/Exclamation";
 import Spinner from "~/components/svgs/Spinner";
 import { getApiToken, getProjectIdFromCookie } from "~/cookies.server";
 
@@ -93,10 +95,15 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ serviceId });
   } else if (_action === "create-service") {
     const name = body.get("name")!;
-    await api.createService(projectId, name.toString(), "nginx", {
-      PORT: "80",
-    });
-    return json({ name });
+    try {
+      await api.createService(projectId, name.toString(), "nginx", {
+        PORT: "80",
+      });
+      return json({ name });
+    } catch (error: unknown) {
+      const errorMessage = (error as Error).message;
+      return json({ error: `${errorMessage} (${name})` }, { status: 400 });
+    }
   }
 }
 
@@ -155,7 +162,6 @@ const ServiceCard = ({ service }: { service: Service }) => {
 };
 
 const NewServiceCard = () => {
-  const createProjectFetcher = useFetcher();
   const submit = useSubmit();
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -163,7 +169,6 @@ const NewServiceCard = () => {
     event.preventDefault();
 
     const data = new FormData(event.target as HTMLFormElement);
-
     submit(data, { navigate: false, method: "post" });
 
     formRef.current?.reset();
@@ -172,7 +177,7 @@ const NewServiceCard = () => {
   return (
     <div className="border border-dashed stroke-slate-300 p-5 dark:text-white rounded-md mt-4 max-w-lg m-auto">
       <h2 className="text-2xl text-center text-slate-300">Launch Service</h2>
-      <createProjectFetcher.Form
+      <Form
         name="create-service"
         method="post"
         action="/?index"
@@ -212,7 +217,7 @@ const NewServiceCard = () => {
         >
           Launch
         </button>
-      </createProjectFetcher.Form>
+      </Form>
     </div>
   );
 };
@@ -267,6 +272,21 @@ export default function Index() {
             {fetchers.filter((f) => f.state === "submitting").length > 0 && (
               <Spinner />
             )}
+            {fetchers
+              .reverse()
+              .slice(0, 5)
+              .filter((f) => f.data?.error)
+              .map((f) => {
+                return (
+                  <span
+                    key={f.key}
+                    className="fill-red-500 cursor-help"
+                    title={`${f.data.error}`}
+                  >
+                    <Exclamation />
+                  </span>
+                );
+              })}
           </span>
         </h1>
         <div className="grid grid-cols-3 gap-3">
