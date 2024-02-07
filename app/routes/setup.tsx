@@ -12,7 +12,7 @@ import {
   useLoaderData,
 } from "@remix-run/react";
 import { Suspense, useCallback, useRef } from "react";
-import Api from "~/api";
+import Api from "../api";
 import Shield from "~/components/svgs/Shield";
 import Spinner from "~/components/svgs/Spinner";
 import {

@@ -120,7 +120,7 @@ const ServiceCard = ({ service }: { service: Service }) => {
   const deployment = service.deployments.edges[0]?.node;
 
   return (
-    <div className="bg-slate-600 p-5 dark:text-white rounded-md flex h-full flex-col relative">
+    <div className="bg-slate-200 dark:bg-slate-600 p-5 dark:text-white rounded-md flex h-full flex-col relative">
       {deployment && (
         <div className="flex space-x-2 my-2 justify-end top-1 right-1 absolute">
           <span className="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
@@ -175,8 +175,8 @@ const NewServiceCard = () => {
   };
 
   return (
-    <div className="border border-dashed stroke-slate-300 p-5 dark:text-white rounded-md mt-4 max-w-lg m-auto">
-      <h2 className="text-2xl text-center text-slate-300">Launch Service</h2>
+    <div className="border border-dashed bg-slate-200 dark:bg-inherit stroke-slate-300 p-5 dark:text-white rounded-md mt-4 max-w-lg m-auto">
+      <h2 className="text-2xl text-center dark:text-slate-300">Launch Service</h2>
       <Form
         name="create-service"
         method="post"
@@ -186,7 +186,7 @@ const NewServiceCard = () => {
         onSubmit={handleSubmit}
       >
         <input type="hidden" name="_action" value="create-service" />
-        <label htmlFor="name" className="block mt-4 text-slate-300">
+        <label htmlFor="name" className="block mt-4 dark:text-slate-300">
           Service Name
         </label>
         <input
@@ -196,7 +196,7 @@ const NewServiceCard = () => {
           required
           className="bg-gray-50 rounded-lg border border-gray-300 text-gray-900 disabled:text-gray-500 focus:ring-blue-500 focus:border-blue-500 block flex-1 text-sm p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:disabled:text-slate-400 dark:focus:ring-blue-500 dark:focus:border-blue-500"
         />
-        <label htmlFor="name" className="block mt-4 text-slate-300">
+        <label htmlFor="name" className="block mt-4 dark:text-slate-300">
           Source
         </label>
         <select
@@ -242,7 +242,7 @@ export default function Index() {
           {project.name}
           <Link
             to="/setup"
-            className="text-sm ms-4 bg-slate-600 p-2 rounded-md align-middle"
+            className="text-sm ms-4 dark:bg-slate-600 bg-action-400 p-2 rounded-md align-middle"
           >
             <svg
               className="w-6 h-6 text-gray-800 dark:text-white inline-block me-1"
